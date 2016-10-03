@@ -79,7 +79,7 @@ class ball:
         self.width = width
         self.height = height
         self.RGB = (r, g, b)
-        self.velocity = [-3, random.random()]
+        self.velocity = [random.randint(-3, -2), random.random()]
         pos = pg.draw.rect(screen, self.RGB, ((self.posx, self.posy), (self.width, self.height)))
         self.hitbox = pg.Rect((self.posx, self.posy), (self.width, self.height))
 
@@ -138,8 +138,6 @@ bottomOfScreen  = pg.Rect((0, 401), (400, 1))
 player1Goal     = pg.Rect((0, 0),   (17, 401))
 player2Goal     = pg.Rect((400, 0),   (-17, 401))
 
-
-pg.key.set_repeat(1, 1)
 keys = []
 
 while True:
@@ -149,7 +147,9 @@ while True:
     ball.updateBall()
     p1.updatePlayer()
     p2.updatePlayer()
+    
     print ball.velocity
+    
     pg.draw.rect(screen, (255, 0, 0), player1Goal, 1)
     pg.draw.rect(screen, (255, 0, 0), player2Goal, 1)
     pg.display.update()
@@ -171,7 +171,7 @@ while True:
         ball.velocity[0] = -ball.velocity[0]
         if(not ball.velocity[0] > 3.2):
             ball.velocity[0] += 0.1
-            if((ball.velocity[1] > 0) and (not ball.velocity[1] < 1.7):
+            if((ball.velocity[1] > 0) and (not ball.velocity[1] < 1.7)):
                ball.velocity[1] += 0.05
 
     if( (ball.hitbox.colliderect(p2.hitbox)) and (not ball.hitbox.colliderect(player2Goal)) ):
