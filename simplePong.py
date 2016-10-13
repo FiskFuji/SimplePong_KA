@@ -43,7 +43,7 @@ CL = pg.time.Clock()
 
 #:::::::::::::::::::::::#
 #_______Versioning______#
-verNo = 1.0             #
+verNo = 1.1             #
 #:::::::::::::::::::::::#
 
 # Initialize the display and the caption; as well as a system font.
@@ -53,6 +53,27 @@ scorefont = pg.font.SysFont("Monospace", 26)
 
 # Is the program running?
 RUNNING = True
+
+# Dictionary that stores game 'data' variables. 
+OPS = {
+    # Where the screen should 'be'.
+    # 0 = Menu
+    # 1 = AI or Player
+    # 2 = Game 
+    "LOCATION": 0,
+
+    # Option of Random Ball.
+    # True / False.
+    "RANDOMBALL": False,
+
+    # Flag to keep track of whether or not the first countdown has been completed.
+    # True / False.
+    "INITCOUNT": True
+
+    # Is the player hovering over a button in the menu screen?
+    # True / False
+    
+    }
 
 #===CLASS Definition: Player_==================================================#
 # This class represents player objects. The class contains members that alter  # 
@@ -273,6 +294,26 @@ def drawBoard():
     screen.blit(scorefont.render(str(p2.score), 1, (255, 255, 255)), (378, 410))
     screen.blit(scorefont.render("SCORE",       1, (255, 255, 255)), (161, 410))
 
+#------Definition: Menu Screen-------------------------------------------------#
+#___:::Draw the Menu:::___
+# Draw all the necessary components of the menu screen. This includes shapes,
+# buttons, etc.
+def drawMenu():
+    # Fill the screen with black each time this is called.
+    screen.fill((0, 0, 0))
+
+    # Draw the menu:
+    # Title, Boxes, VS. AI and 2 Player Options.
+    screen.blit(scorefont.render(("Simple Pong v" + str(verNo)), 1, (255, 255, 255)), (90, 150))
+    pg.draw.rect(screen, (255, 255, 255), ((130, 190), (140, 45)), 1)
+    pg.draw.rect(screen, (255, 255, 255), ((130, 240), (140, 45)), 1)
+    screen.blit(scorefont.render("VS. AI", 1, (0, 255, 255)), (155, 200))
+    screen.blit(scorefont.render("2 Player", 1, (255, 150, 0)), (136, 250))
+
+    # Draw controls and option box.
+    pg.draw.rect(screen, (255, 255, 255), ((80, 304), (20, 20)), 1)
+    screen.blit(scorefont.render("Random RGB Ball", 1, (255, 255, 255)), (110, 300))    
+
 #------'MAIN' Program----------------------------------------------------------#
 # Make the player objects and the ball object.
 p1      = player(5,   150, 15, 100, (255, 255, 255))
@@ -286,11 +327,43 @@ bottomOfScreen  = pg.Rect((0, 401), (400, 1))
 player1Goal     = pg.Rect((0, 0),   (2, 401))
 player2Goal     = pg.Rect((400, 0),   (-2, 401))
 
+# Create 3 Rect objects to keep track of the menu screen buttons.
+VSAI_Button     = pg.Rect((130, 190), (140, 45))
+VS2P_Button     = pg.Rect((130, 240), (140, 45))
+RANDOMBALL      = pg.Rect((80, 304), (20, 20))
+
 # Initialize a list of which keys are being pressed.
 keys = []
 
-# Flag to keep track of whether or not the first countdown has been completed.
-initialCountdown = True
+# Menu Screen Loop:
+while(OPS["LOCATION"] == 0):
+
+    # Get the mouse position each iteration.
+    mPos = pg.mouse.get_pos()
+
+    # Draw the menu each time.
+    drawMenu()
+
+    # If the mouse is inside the VS AI button, 'light' it up.
+    if(VSAI_Button.collidepoint(mPos)):
+        pg.draw.rect(screen, (255, 255, 255), ((130, 190), (140, 45)), 2)
+
+    # If the mouse is inside the 2Player button, 'light' it up.
+    elif(VS2P_Button.collidepoint(mPos)):
+         pg.draw.rect(screen, (255, 255, 255), ((130, 240), (140, 45)), 2)
+
+    # If the mouse is inside the Random RGB option, 'light' it up.
+    elif(RANDOMBALL.collidepoint(mPos)):
+         pg.draw.rect(screen, (255, 255, 255), ((80, 304), (20, 20)), 2)
+
+    # Update the display.
+    pg.display.update()
+
+    # Event Handler:
+    for e in pg.event.get():
+
+        if e.type == pg.QUIT:
+            pg.quit(); sys.exit()
 
 # Outer Main Loop.
 while True:
@@ -299,7 +372,7 @@ while True:
     while RUNNING:
 
         # Countdown if the initial timer hasn't been done yet.
-        if(initialCountdown):
+        if(OPS["INITCOUNTDOWN"]):
             timer = 60 * 4
 
             # Timer that counts down from 3.
@@ -409,6 +482,9 @@ while True:
                 # Subtracts a random value from 0.0 - 1.0.
                 ball.velocity[1] -= random.random()
 
+            # Change the ball color randomly.
+            ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
         # Ball collides with player 2 and is not past the paddle.
         if( (ball.hitbox.colliderect(p2.hitbox)) and (ball.hitbox.center[0] < 380) ):
 
@@ -429,6 +505,9 @@ while True:
                 # Subtracts a random value from 0.0 - 1.0.
                 ball.velocity[1] -= random.random()
 
+            # Change the ball color randomly.
+            ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
         # Ball collides with the bottom of the screen.
         if( (ball.hitbox.colliderect(bottomOfScreen)) and ((ball.hitbox.center[0] > 20) or (ball.hitbox.center[0] < 380)) ):
 
@@ -439,6 +518,9 @@ while True:
             if(ball.velocity[1] > -2.60):
                 ball.velocity[1] -= 0.15
 
+            # Change the ball color randomly.
+            ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
         # Ball collides with the top of the screen.
         if( (ball.hitbox.colliderect(topOfScreen)) and ((ball.hitbox.center[0] > 20) or (ball.hitbox.center[0] < 380)) ):
 
@@ -448,6 +530,9 @@ while True:
             # If the Y-Velocity is less than 2.6, increase it.
             if(ball.velocity[1] < 2.60):
                 ball.velocity[1] += 0.15
+
+            # Change the ball color randomly.
+            ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
         #---Score Checking---------------------#
         # If the player 1's score is 5, they win.
