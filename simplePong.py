@@ -17,12 +17,16 @@
 #                   - VS. a second player.                                     #
 #                                                                              #
 #   Dates:      ---                                                            #
-#               9.12.2016: Started.                                            #
-#               10.3.2016: Close to MVP.                                       #
-#               10.7.2016: MVP Finished. Features mostly complete. Commenting  #
-#                           needed, last 2 features would be to make the whole #
-#                           program in a single class and create a simple AI   #
-#                           with a start screen menu.                          # 
+#               9.12.2016:  Started.                                           #
+#               10.3.2016:  Close to MVP.                                      #
+#               10.7.2016:  MVP Finished. Features mostly complete. Commenting #
+#                            needed, last 2 features would be to make the      #
+#                            whole program in a single class and create a      #
+#                            simple AI with a start screen menu.               #
+#               10.13.2016: Finished menu screen addition as well as a very    #
+#                            simple prototype AI. As well as an option to make #
+#                            the ball change colors randomly when bouncing off #
+#                            a surface.                                        # 
 #                                                                              #
 #==============================================================================#
 
