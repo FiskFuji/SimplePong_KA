@@ -17,12 +17,16 @@
 #                   - VS. a second player.                                     #
 #                                                                              #
 #   Dates:      ---                                                            #
-#               9.12.2016: Started.                                            #
-#               10.3.2016: Close to MVP.                                       #
-#               10.7.2016: MVP Finished. Features mostly complete. Commenting  #
-#                           needed, last 2 features would be to make the whole #
-#                           program in a single class and create a simple AI   #
-#                           with a start screen menu.                          # 
+#               9.12.2016:  Started.                                           #
+#               10.3.2016:  Close to MVP.                                      #
+#               10.7.2016:  MVP Finished. Features mostly complete. Commenting #
+#                            needed, last 2 features would be to make the      #
+#                            whole program in a single class and create a      #
+#                            simple AI with a start screen menu.               #
+#               10.13.2016: Finished menu screen addition as well as a very    #
+#                            simple prototype AI. As well as an option to make #
+#                            the ball change colors randomly when bouncing off #
+#                            a surface.                                        # 
 #                                                                              #
 #==============================================================================#
 
@@ -68,11 +72,12 @@ OPS = {
 
     # Flag to keep track of whether or not the first countdown has been completed.
     # True / False.
-    "INITCOUNT": True
+    "INITCOUNTDOWN": True,
 
-    # Is the player hovering over a button in the menu screen?
-    # True / False
-    
+    # Internal processor that keeps track of the AI's direction.
+    # 1 = Going up
+    # 2 = Going down
+    "AIDIRECTION": random.randint(1,2)
     }
 
 #===CLASS Definition: Player_==================================================#
@@ -304,7 +309,7 @@ def drawMenu():
 
     # Draw the menu:
     # Title, Boxes, VS. AI and 2 Player Options.
-    screen.blit(scorefont.render(("Simple Pong v" + str(verNo)), 1, (255, 255, 255)), (90, 150))
+    screen.blit(scorefont.render(("Simple Pong v" + str(verNo)), 1, (255, 255, 255)), (78, 150))
     pg.draw.rect(screen, (255, 255, 255), ((130, 190), (140, 45)), 1)
     pg.draw.rect(screen, (255, 255, 255), ((130, 240), (140, 45)), 1)
     screen.blit(scorefont.render("VS. AI", 1, (0, 255, 255)), (155, 200))
@@ -312,7 +317,11 @@ def drawMenu():
 
     # Draw controls and option box.
     pg.draw.rect(screen, (255, 255, 255), ((80, 304), (20, 20)), 1)
-    screen.blit(scorefont.render("Random RGB Ball", 1, (255, 255, 255)), (110, 300))    
+    screen.blit(scorefont.render("Random RGB Ball", 1, (255, 255, 255)), (110, 300))
+
+    # If the random ball option is on, draw an X in the box.
+    if(OPS["RANDOMBALL"]):
+        screen.blit(scorefont.render("X", 1, (255, 255, 255)), (82, 300))
 
 #------'MAIN' Program----------------------------------------------------------#
 # Make the player objects and the ball object.
@@ -335,7 +344,7 @@ RANDOMBALL      = pg.Rect((80, 304), (20, 20))
 # Initialize a list of which keys are being pressed.
 keys = []
 
-# Menu Screen Loop:
+#------Menu Screen Loop--------------------------------------------------------#
 while(OPS["LOCATION"] == 0):
 
     # Get the mouse position each iteration.
@@ -362,11 +371,31 @@ while(OPS["LOCATION"] == 0):
     # Event Handler:
     for e in pg.event.get():
 
+        # Checks for the 'X' button being clicked in the window.
         if e.type == pg.QUIT:
             pg.quit(); sys.exit()
 
-# Outer Main Loop.
-while True:
+        # Checks if the mouse was clicked in the Rainbow Ball option box.
+        elif( (e.type == pg.MOUSEBUTTONUP) and (RANDOMBALL.collidepoint(mPos) == 1) ):
+
+            # If it was alreadt on, turn it off.
+            if(OPS["RANDOMBALL"]):
+                OPS["RANDOMBALL"] = False
+
+            # Otherwise, turn it on.
+            elif not(OPS["RANDOMBALL"]):
+                OPS["RANDOMBALL"] = True
+
+        # Checks if the mouse was clicked in the 2-Player box.
+        elif( (e.type == pg.MOUSEBUTTONUP) and (VS2P_Button.collidepoint(mPos)) ):
+            OPS["LOCATION"] = 2
+
+        # Checks if the mouse was clicked in the VS. AI box.
+        elif( (e.type == pg.MOUSEBUTTONUP) and (VSAI_Button.collidepoint(mPos)) ):
+            OPS["LOCATION"] = 1
+
+#------VS. AI Loop-------------------------------------------------------------#
+while(OPS["LOCATION"] == 1):
 
     # Loop that occurs while the program is 'Running'.
     while RUNNING:
@@ -407,7 +436,333 @@ while True:
                 timer -= 1
 
             # Set the internal flag to false.
-            initialCountdown = False
+            OPS["INITCOUNTDOWN"] = False
+
+        #------After the initial timer:------#
+        # 60 Iterations per second.
+        CL.tick(60)
+
+        # Draw the board each iteration.
+        drawBoard()
+
+        # Update the ball, and players each iteration.
+        ball.updateBall()
+        p1.updatePlayer()
+        p2.updatePlayer()
+
+        # Update the display.
+        pg.display.update()
+
+        # Update the list of pressed keys.
+        keys = pg.key.get_pressed()
+        
+        #:::::::::::::::::::::::::::::::::::::::::::::::::::#
+        #___________Optional: Draw the Hitboxes.____________#
+        ##pg.draw.rect(screen, (255, 0, 0), p1.hitbox, 1)
+        ##pg.draw.rect(screen, (255, 0, 0), p2.hitbox, 1)
+        ##pg.draw.rect(screen, (255, 0, 0), player1Goal, 1)
+        ##pg.draw.rect(screen, (255, 0, 0), player2Goal, 1)
+        ##pg.draw.rect(screen, (255, 0, 0), ball.hitbox, 1)
+        #:::::::::::::::::::::::::::::::::::::::::::::::::::#
+
+        #:::::::::::::::::::::::::::::::::::::::::::::::::::#
+        #_____Optional: Print the Velocity and Position_____#
+        ##print ball.velocity
+        ##print ball.hitbox.center
+        #:::::::::::::::::::::::::::::::::::::::::::::::::::#
+        
+        #------Large Conditional Branches------#
+
+        #---Player Movements-------------------#
+        # Player 1 Presses 'W' key.
+        if((keys[pg.K_w]) and (p1.posy >= 1) and (not keys[pg.K_s])):
+            p1.posy -= 4
+
+        # Player 1 Presses 'S' key.
+        if((keys[pg.K_s]) and (p1.posy+100 <= 399) and (not keys[pg.K_w])):
+            p1.posy += 4
+
+        #---Make the AI Move-------------------#
+        # The AI moves up and down the screen until it hits the edges.
+        if(p2.posy > 1 and OPS["AIDIRECTION"] == 1):
+            p2.posy -= 5
+
+            # If the AI is at the top, reverse direction.
+            if(p2.posy <= 1):
+                OPS["AIDIRECTION"] = 2
+
+        # The AI moves down until the bottom of the screen.
+        elif(p2.posy+100 < 399 and OPS["AIDIRECTION"] == 2):
+            p2.posy += 5
+
+            # If the AI is at the bottom, reverse direction.
+            if(p2.posy+100 >= 399):
+                OPS["AIDIRECTION"] = 1
+
+        #---Ball Collisions--------------------#
+        # Ball collides with player 1 and is not past the paddle:
+        if( (ball.hitbox.colliderect(p1.hitbox)) and (ball.hitbox.center[0] > 20) ):
+
+            # Make the curent X-Velocity negative.
+            ball.velocity[0] = -ball.velocity[0]
+
+            # If the X-Velocity is below 4.3, increase it.
+            if(ball.velocity[0] < 4.3):
+                ball.velocity[0] += 0.1
+
+            # Random increase of Y-Velocity. 50% to be a negative or positive.
+            if(random.randint(1,2) == 1):
+                
+                # Adds a random value from 0.0 - 1.0.
+                ball.velocity[1] += random.random()
+
+            # Otherwise, subtract a value.
+            else:
+                # Subtracts a random value from 0.0 - 1.0.
+                ball.velocity[1] -= random.random()
+
+            # Change the ball color randomly if the option was selected.
+            if(OPS["RANDOMBALL"]):
+                ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
+        # Ball collides with the AI and is not past the paddle.
+        if( (ball.hitbox.colliderect(p2.hitbox)) and (ball.hitbox.center[0] < 380) ):
+
+            # Make the current X-Velocity negative.
+            ball.velocity[0] = -ball.velocity[0]
+
+            # If the current X-Velocity is above -4.3, decrease it further.
+            if(ball.velocity[0] > -4.3):
+               ball.velocity[0] -= 0.15
+
+            # Random increase of the Y-Velocity. 50% to be negative/positive.
+            if(random.randint(1,2) == 1):
+
+                # Adds a random value from 0.0 - 1.0.
+                ball.velocity[1] += random.random()
+
+            # Otherwise, subtract a value.
+            else:
+                # Subtracts a random value from 0.0 - 1.0.
+                ball.velocity[1] -= random.random()
+
+            # Change the ball color randomly if the option was selected.
+            if(OPS["RANDOMBALL"]):
+                ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
+        # Ball collides with the bottom of the screen.
+        if( (ball.hitbox.colliderect(bottomOfScreen)) and ((ball.hitbox.center[0] > 20) or (ball.hitbox.center[0] < 380)) ):
+
+            # Make the current Y-Velocity negative.
+            ball.velocity[1] = -ball.velocity[1]
+
+            # If the Y-Velocity is greater than -2.6, increase it.
+            if(ball.velocity[1] > -2.60):
+                ball.velocity[1] -= 0.15
+
+            # Change the ball color randomly if the option was selected.
+            if(OPS["RANDOMBALL"]):
+                ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
+        # Ball collides with the top of the screen.
+        if( (ball.hitbox.colliderect(topOfScreen)) and ((ball.hitbox.center[0] > 20) or (ball.hitbox.center[0] < 380)) ):
+
+            # Make the current Y-Velocity negative.
+            ball.velocity[1] = -ball.velocity[1]
+
+            # If the Y-Velocity is less than 2.6, increase it.
+            if(ball.velocity[1] < 2.60):
+                ball.velocity[1] += 0.15
+
+            # Change the ball color randomly if the option was selected.
+            if(OPS["RANDOMBALL"]):
+                ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
+        #---Score Checking---------------------#
+        # If the player 1's score is 5, they win.
+        if(p1.score == 5):
+
+            # Mini While Loop for the winning screen.
+            while RUNNING:
+
+                # Get the mouse position.
+                mPos = pg.mouse.get_pos()
+
+                # Fill the screen with black each loop, then draw the
+                # necessary words / rectangles.
+                screen.fill((0, 0, 0))
+                qButton = pg.Rect((150, 300), (100, 40))
+                pg.draw.rect(screen, (255, 0, 0), qButton, 2)
+                screen.blit(scorefont.render(("Player 1 wins!"), 1, (0, 255, 255)), (100, 188))
+
+                # If the mouse is in the Quit button, light up the word 'Quit'
+                if(qButton.collidepoint(mPos) == 1):
+                    screen.blit(scorefont.render("Quit", 1, (255, 0, 0)),   (170, 305))
+                    screen.blit(scorefont.render("Quit", 1, (255, 0, 255)), (171, 305))
+
+                # Otherwise, draw it regularly.
+                else:
+                    screen.blit(scorefont.render("Quit", 1, (255, 0, 0)), (170, 305))
+
+                # Update the display.
+                pg.display.update()
+
+                # Mini-Event Handler:
+                for e in pg.event.get():
+
+                    # Checks for pressing the 'X' button on the window.
+                    if e.type == pg.QUIT:
+                        pg.quit(); sys.exit()
+
+                    # Checks for the mouse button being pressed inside the
+                    # quit button.
+                    elif ((e.type == pg.MOUSEBUTTONUP) and (qButton.collidepoint(mPos) == 1)):
+                        pg.quit(); sys.exit()
+
+        # If the AI's score is 5, it wins.
+        elif(p2.score == 5):
+
+            # Mini While Loop for the winning screen.
+            while RUNNING:
+
+                # Get the mouse position.
+                mPos = pg.mouse.get_pos()
+
+                # Fill the screen with black and draw the necessary
+                # components and rectangles.
+                screen.fill((0, 0, 0))
+                qButton = pg.Rect((150, 300), (100, 40))
+                pg.draw.rect(screen, (255, 0, 0), qButton, 2)
+                screen.blit(scorefont.render(("AI Player wins!"), 1, (0, 255, 255)), (90, 188))
+
+                # If the mouse is inside the Quit button, make it
+                # light up.
+                if(qButton.collidepoint(mPos) == 1):
+                    screen.blit(scorefont.render("Quit", 1, (255, 0, 0)),   (170, 305))
+                    screen.blit(scorefont.render("Quit", 1, (255, 0, 255)), (171, 305))
+
+                # Otherwise, draw the Quit text normally.
+                else:
+                    screen.blit(scorefont.render("Quit", 1, (255, 0, 0)), (170, 305))
+
+                # Update the display.
+                pg.display.update()
+                
+                # Mini-Event Handler.    
+                for e in pg.event.get():
+
+                    # Checks for pressing the 'X' button on the window.
+                    if e.type == pg.QUIT:
+                        pg.quit(); sys.exit()
+
+                    # Checks for the mouse button being pressed inside the
+                    # quit button.
+                    elif ((e.type == pg.MOUSEBUTTONUP) and (qButton.collidepoint(mPos) == 1)):
+                        pg.quit(); sys.exit()
+
+        #---Player Scoring Mechanic------------#
+        # If the ball passes the edge of the screen, on the AI's side:
+        # Increase player 1's score and restart the ball.
+        if(ball.hitbox.center[0] > 420):
+
+            # Increase player 1's score.
+            p1.score += 1
+
+            # If the score does not equal 5, restart the ball and change
+            # the side it needs to go to.
+            if(p1.score != 5):
+                ball.sideToGo = 1
+                ball.restartBall()
+
+        # If the ball passes the edge of the screen on Player 1's side:
+        # Increase the AI's score and restart the ball.
+        if(ball.hitbox.center[0] < -20):
+
+            # Increase player 2's score.
+            p2.score += 1
+
+            # If the score does not equal 5, restart the ball and change
+            # the side it needs to go to.
+            if(p2.score != 5):
+                ball.sideToGo = 2
+                ball.restartBall()
+
+        #------Event Handler-------------------#
+        for e in pg.event.get():
+
+            # Checks if the 'X' button on the window has been pressed.
+            if e.type == pg.QUIT:
+                pg.quit(); sys.exit()
+
+            # Checks if the 'P' key was pressed to pause the game.
+            elif(e.type == pg.KEYDOWN and e.key == pg.K_p):
+
+                    # Set running to false, fill the screen with black and
+                    # write the word 'Paused'.
+                    RUNNING = False
+                    screen.fill((0, 0, 0))
+                    screen.blit(scorefont.render("PAUSED", 1, (255, 0, 255)), (155, 195))
+                    pg.display.update()
+
+    # If the program is not running, use this while loop:
+    while not(RUNNING):
+
+        # Event Handler:
+        for e in pg.event.get():
+
+            # Checks for the 'X' button on the window being pressed.
+            if e.type == pg.QUIT:
+                pg.quit(); sys.exit()
+
+            # If the 'P' key is pressed, un-pause the game.
+            elif(e.type == pg.KEYDOWN and e.key == pg.K_p):
+
+                # Set the running flag to True again.
+                RUNNING = True            
+
+#------2 Player Loop-----------------------------------------------------------#
+while(OPS["LOCATION"] == 2):
+
+    # Loop that occurs while the program is 'Running'.
+    while RUNNING:
+
+        # Countdown if the initial timer hasn't been done yet.
+        if(OPS["INITCOUNTDOWN"]):
+            timer = 60 * 4
+
+            # Timer that counts down from 3.
+            while(timer >= 60):
+                CL.tick(60)
+
+                # Display a timer showing '3'.
+                if(timer / 60 == 3):
+                    drawBoard()
+                    p1.updatePlayer()
+                    p2.updatePlayer()
+                    screen.blit(scorefont.render("3", 1, (0, 255, 255)), (193, 188))
+
+                # Display a timer showing '2'.
+                elif(timer / 60 == 2):
+                    drawBoard()
+                    p1.updatePlayer()
+                    p2.updatePlayer()
+                    screen.blit(scorefont.render("2", 1, (0, 255, 255)), (193, 188))
+
+                # Display a timer showing '1'.
+                elif(timer / 60 == 1):
+                    drawBoard()
+                    p1.updatePlayer()
+                    p2.updatePlayer()
+                    screen.blit(scorefont.render("1", 1, (0, 255, 255)), (193, 188))
+
+                # Update the display.
+                pg.display.update()
+
+                # Decrease the timer.
+                timer -= 1
+
+            # Set the internal flag to false.
+            OPS["INITCOUNTDOWN"] = False
 
         #------After the initial timer:------#
         # 60 Iterations per second.
@@ -477,13 +832,15 @@ while True:
                 
                 # Adds a random value from 0.0 - 1.0.
                 ball.velocity[1] += random.random()
-                
+
+            # Otherwise, subtract a value.
             else:
                 # Subtracts a random value from 0.0 - 1.0.
                 ball.velocity[1] -= random.random()
 
-            # Change the ball color randomly.
-            ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            # Change the ball color randomly if the option was selected.
+            if(OPS["RANDOMBALL"]):
+                ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
         # Ball collides with player 2 and is not past the paddle.
         if( (ball.hitbox.colliderect(p2.hitbox)) and (ball.hitbox.center[0] < 380) ):
@@ -501,12 +858,14 @@ while True:
                 # Adds a random value from 0.0 - 1.0.
                 ball.velocity[1] += random.random()
 
+            # Otherwise, subtract a value.
             else:
                 # Subtracts a random value from 0.0 - 1.0.
                 ball.velocity[1] -= random.random()
 
-            # Change the ball color randomly.
-            ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            # Change the ball color randomly if the option was selected.
+            if(OPS["RANDOMBALL"]):
+                ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
         # Ball collides with the bottom of the screen.
         if( (ball.hitbox.colliderect(bottomOfScreen)) and ((ball.hitbox.center[0] > 20) or (ball.hitbox.center[0] < 380)) ):
@@ -518,8 +877,9 @@ while True:
             if(ball.velocity[1] > -2.60):
                 ball.velocity[1] -= 0.15
 
-            # Change the ball color randomly.
-            ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            # Change the ball color randomly if the option was selected.
+            if(OPS["RANDOMBALL"]):
+                ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
         # Ball collides with the top of the screen.
         if( (ball.hitbox.colliderect(topOfScreen)) and ((ball.hitbox.center[0] > 20) or (ball.hitbox.center[0] < 380)) ):
@@ -531,8 +891,9 @@ while True:
             if(ball.velocity[1] < 2.60):
                 ball.velocity[1] += 0.15
 
-            # Change the ball color randomly.
-            ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            # Change the ball color randomly if the option was selected.
+            if(OPS["RANDOMBALL"]):
+                ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
         #---Score Checking---------------------#
         # If the player 1's score is 5, they win.
