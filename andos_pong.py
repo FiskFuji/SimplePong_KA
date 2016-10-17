@@ -1,4 +1,4 @@
-#//////////////////////////////////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 #                                   Pong                                       /
 #                           Created by : Andy Kor                              /
 #                           Guided by : Kirk Worley                            /
@@ -73,42 +73,63 @@ class Ball: #A class for the ball will allow us to make changes later to the bal
     ballHitBox = pg.Rect((0, 0,0,0))
     #This creates a square hit box around the ball so that we can check for collisions with the rectangles.
     velocity = [0,0]
+    scoreright = 0
+    scoreleft = 0
+    scorefont = pg.font.SysFont("Monospace", 100)
 
     def __init__(self, x, y, radius, (r,g,b)):
         self.posX = x
         self.posY = y
         self.radius = radius
         self.color = (r,g,b)
-        self.velocity = [rnd.randint(-10, -6), rnd.randint(-3,3)]
-        self.ballHitBox = pg.Rect((self.posX-self.radius, self.posY-self.radius), (self.radius*2 + 1, self.radius*2 + 1))
+        self.velocity = [rnd.randint(-12, -8), rnd.randint(-3,3)]
+        self.scoreright = 0
+        self.scoreleft = 0
+        self.ballHitBox = pg.Rect((self.posX - self.radius, self.posY - self.radius), (self.radius*2 + 1, self.radius*2 + 1))
 
     def moveBall(self):
         self.posX += self.velocity[0]
         self.posY += self.velocity[1]
 
     def restartright(self):
+        self.scoreleft += 1
         self.posX = 500 #The original position of the ball to simulate a "restart."
         self.posY = 300
         if ball.velocity[0] > 0:
-            ball.velocity[0] = rnd.randint(-10, -6)
+            ball.velocity[0] = rnd.randint(-12, -8)
         if ball.velocity[0] < 0:
             ball.velocity[0] = rnd.randint(6, 10)
-            
-    def restartleft(self):
+
+    def restartleft(self): #Resets position and increments score based on the side that won.
+        self.scoreright += 1
         self.posX = 500
         self.posY = 300
         if ball.velocity[0] > 0:
-            ball.velocity[0] = rnd.randint(-10, -6)
+            ball.velocity[0] = rnd.randint(-12, -8)
         if ball.velocity[0] < 0:
             ball.velocity[0] = rnd.randint(6, 10)
-            
+
+    def updatescore(self): #Updates the score count.
+        screen.blit(self.scorefont.render(str(self.scoreleft), 1, (255,255,255)), (250, 20))
+        screen.blit(self.scorefont.render(str(self.scoreright), 1, (255,255,255)), (750, 20))
+
+    def restartscore(self): #Once the score reaches 4, the game will restart with new scores.
+        self.posX = 500
+        self.posY = 300
+        if ball.velocity[0] > 0:
+            ball.velocity[0] = rnd.randint(-12, -8)
+        if ball.velocity[0] < 0:
+            ball.velocity[0] = rnd.randint(6, 10)
+        self.scoreright = 0
+        self.scoreleft = 0
+
+
     def updateBall(self): #Like the last two, this will update the ball's image based on it's change in position.
         self.moveBall()
         pg.gfxdraw.aacircle(screen, self.posX, self.posY, self.radius, self.color)
         pg.gfxdraw.filled_circle(screen, self.posX, self.posY, self.radius, self.color)
-        self.ballHitBox.left = self.posX-self.radius
-        self.ballHitBox.top = self.posY-self.radius
-
+        self.ballHitBox.left = self.posX - self.radius
+        self.ballHitBox.top = self.posY - self.radius
 
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -120,7 +141,7 @@ player2 = Player(970, 225, 15, 150,(255, 255, 255))
 ball = Ball(500, 300, 15, (255, 255, 255))
 
 
-rechitboxTop = pg.Rect((0, 0, 1000, 10)) #These are invisible rectangles on the top and bottom of the screen.
+rechitboxTop = pg.Rect((0, 0, 1000, 5)) #These are invisible rectangles on the top and bottom of the screen.
 rechitboxBot = pg.Rect((0, 600, 1000, 10))#They make sure the ball bounces off them instead of through them.
 
 keys = [] #Store the keys that were pressed
@@ -135,10 +156,7 @@ while True: #This will keep everything running forever and in "real-time."
     player2.updatePlayer()
 
     ball.updateBall() #Updates the ball.
-
-    pg.draw.rect(screen, (255, 0, 0), player1.rechitbox, 1)
-    pg.draw.rect(screen, (255, 0, 0), player2.rechitbox, 1)
-    pg.draw.rect(screen, (0, 255, 255), ball.ballHitBox, 1)
+    ball.updatescore()
     pg.display.update() #Updates the screen.
 
     if (keys[pg.K_w] and player1.posY > 0):
@@ -153,11 +171,14 @@ while True: #This will keep everything running forever and in "real-time."
     if (keys[pg.K_DOWN] and (player2.posY + player2.height < 600)):
         player2.posY += 25 #If player 2 pressed the down arrow key, increment the rectangle by 20 units in the y-position.
 
+    if (keys[pg.K_p]): #Creates a 5 second delay, simulates a pause button.
+        pg.time.wait(5000)
+
     if ball.ballHitBox.colliderect(player1.rechitbox):
-        ball.velocity[0] = -ball.velocity[0] #If the ball's hit box collides with player 1's hit box, change it's direction.
+        ball.velocity[0] = (-ball.velocity[0]) #If the ball's hit box collides with player 1's hit box, change it's direction.
 
     if ball.ballHitBox.colliderect(player2.rechitbox):
-        ball.velocity[0] = -ball.velocity[0] #If the ball's hit box collides with player 2's hit box, change it's direction.
+        ball.velocity[0] = (-ball.velocity[0]) #If the ball's hit box collides with player 2's hit box, change it's direction.
 
     if ball.ballHitBox.colliderect(rechitboxTop):
         ball.velocity[1] = -ball.velocity[1] #If the ball's hit box collides with the top of the screen, change it's direction.
@@ -165,14 +186,20 @@ while True: #This will keep everything running forever and in "real-time."
     if ball.ballHitBox.colliderect(rechitboxBot):
         ball.velocity[1] = -ball.velocity[1] #If the ball's hit box collides with the bottom of the screen, change it's direciton.
 
-    if ball.posX > 1015:
+    if ball.posX > 1015: #If the ball goes past the right rectangle, restart it.
         ball.restartright()
         pg.time.delay(1000)
-        
-    if ball.posX < -15:
+
+    if ball.posX < -15: #If the ball goes past the left rectangle, restart it.
         ball.restartleft()
-        pg.time.delay(1000)
+        pg.time.delay(1000) #How much time after the ball goes out of bounds and the restart.
+
+    if ball.scoreright == 4 or ball.scoreleft == 4: #When the score reaches 4 on either side, restart the score and position.
+        ball.restartscore()
+        pg.time.delay(1500)
+
 
     for event in pg.event.get(): #Allows us to quit the program.
         if event.type == pg.QUIT:
             pg.quit(); sys.exit();
+
