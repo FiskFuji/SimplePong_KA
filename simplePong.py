@@ -26,37 +26,26 @@
 #              10.13.2016:  Finished menu screen addition as well as a very    #
 #                            simple prototype AI. As well as an option to make #
 #                            the ball change colors randomly when bouncing off #
-#                            a surface.                                        # 
+#                            a surface.                                        #
+#               5.26.2017:  Refactoring of code. Deleted comments that were    #
+#                            unnecessary. Condensed code into new function,    #
+#                            randomBallColor(). Added constants.               #
 #                                                                              #
 #==============================================================================#
-
 #===Begin Program==============================================================#
-
-#------Begin Imports-----------------------------------------------------------#
 import pygame as pg
 import sys
 import random
 
 #------Initialize Necessary Components-----------------------------------------#
-# Initialize a random seed.
 random.seed(None)
-
-# Initialize PyGame and a Clock object.
 pg.init()
 CL = pg.time.Clock()
 
 #:::::::::::::::::::::::#
 #_______Versioning______#
-verNo = 1.1             #
+verNo = 1.2             #
 #:::::::::::::::::::::::#
-
-# Initialize the display and the caption; as well as a system font.
-screen = pg.display.set_mode((400, 440))
-pg.display.set_caption("Simple Pong v" + str(verNo))
-scorefont = pg.font.SysFont("Monospace", 26)
-
-# Is the program running?
-RUNNING = True
 
 # Constants
 __UP__ = 1
@@ -68,6 +57,16 @@ __MOVEFAST__ = 5
 __STABLE_VELOCITY__ = 4.3
 __STABLE_Y_VELOCITY__ = 2.60
 __MAX_SCORE__ = 5
+__SCREEN_WIDTH__ = 400
+__SCREEN_HEIGHT__ = 440
+
+# Initialize the display and the caption; as well as a system font.
+screen = pg.display.set_mode((__SCREEN_WIDTH__, __SCREEN_HEIGHT__))
+pg.display.set_caption("Simple Pong v" + str(verNo))
+scorefont = pg.font.SysFont("Monospace", 26)
+
+# Is the program running?
+RUNNING = True
 
 # Dictionary that stores game 'data' variables. 
 OPS = {
@@ -315,6 +314,16 @@ def drawBoard():
     screen.blit(scorefont.render("SCORE",       1, (255, 255, 255)), (161, 410))
 
 def randomBallColor(randomRGBOption):
+    """
+    ___:::Give the Ball A Random Color:::___
+    Arguments:
+
+    randomRGBOption: boolean
+    This is the whether or not the ball is able to change colors when bouncing
+    off objects. This can be set either by the menu UI option, or forcibly by
+    passing 'True' to this function.
+    """
+
     if randomRGBOption:
         ball.RGB = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
     else:
@@ -405,11 +414,10 @@ while OPS["LOCATION"] == 0:
 while OPS["LOCATION"] == 1:
     while RUNNING:
 
-        # Countdown if the initial timer hasn't been done yet.
+        # Time counts down from 3 if it hasn't already.
         if OPS["INITCOUNTDOWN"]:
             timer = 60 * 4
 
-            # Timer that counts down from 3.
             while timer >= 60:
                 CL.tick(60)
 
@@ -440,7 +448,6 @@ while OPS["LOCATION"] == 1:
             OPS["INITCOUNTDOWN"] = False
 
         #------After the initial timer:------#
-        # 60 Iterations per second.
         CL.tick(60)
         drawBoard()
         ball.updateBall()
